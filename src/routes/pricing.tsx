@@ -1,0 +1,55 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Check } from "lucide-react";
+import { useState } from "react";
+
+export const Route = createFileRoute("/pricing")({
+  head: () => ({ meta: [{ title: "Pricing — SnapCut AI" }] }),
+  component: PricingPage,
+});
+
+const PLANS = (yearly: boolean) => [
+  { name: "Free", price: 0, desc: "Try it out", features: ["5 removals / day", "Standard quality", "Watermarked downloads"], cta: "Get started", highlight: false },
+  { name: "Pro", price: yearly ? 9 : 12, desc: "For creators", features: ["Unlimited removals", "HD downloads", "No watermark", "Faster processing", "Priority queue"], cta: "Go Pro", highlight: true },
+  { name: "Business", price: yearly ? 39 : 49, desc: "For teams", features: ["Bulk processing", "API access", "Priority support", "Team seats", "SLA"], cta: "Contact sales", highlight: false },
+];
+
+function PricingPage() {
+  const [yearly, setYearly] = useState(false);
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">Plans for <span className="text-gradient">every creator</span></h1>
+          <p className="mt-4 text-muted-foreground">Cancel anytime. Powered by Razorpay.</p>
+          <div className="mt-8 inline-flex rounded-full border border-border bg-card/60 p-1 text-sm">
+            <button onClick={() => setYearly(false)} className={`rounded-full px-5 py-2 ${!yearly ? "bg-gradient-brand text-white" : "text-muted-foreground"}`}>Monthly</button>
+            <button onClick={() => setYearly(true)} className={`rounded-full px-5 py-2 ${yearly ? "bg-gradient-brand text-white" : "text-muted-foreground"}`}>Yearly · save 25%</button>
+          </div>
+        </div>
+        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          {PLANS(yearly).map((p) => (
+            <div key={p.name} className={`relative rounded-3xl p-8 ${p.highlight ? "bg-gradient-brand text-white shadow-glow" : "glass"}`}>
+              {p.highlight && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">Most Popular</span>}
+              <div className={`text-sm font-medium ${p.highlight ? "text-white/80" : "text-muted-foreground"}`}>{p.name}</div>
+              <div className="mt-3 flex items-baseline gap-1">
+                <span className="text-5xl font-bold">${p.price}</span>
+                <span className={`text-sm ${p.highlight ? "text-white/70" : "text-muted-foreground"}`}>/mo</span>
+              </div>
+              <p className={`mt-1 text-sm ${p.highlight ? "text-white/80" : "text-muted-foreground"}`}>{p.desc}</p>
+              <ul className="mt-6 space-y-3">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-sm"><Check className={`h-4 w-4 ${p.highlight ? "text-white" : "text-cyan"}`} /> {f}</li>
+                ))}
+              </ul>
+              <Link to="/signup" className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-foreground" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+}
