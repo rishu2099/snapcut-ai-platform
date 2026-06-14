@@ -16,6 +16,7 @@ import { Route as ResultRouteImport } from './routes/result'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as IndexRouteImport } from './routes/index'
@@ -55,6 +56,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cookies': typeof CookiesRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cookies': typeof CookiesRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/cookies': typeof CookiesRoute
   '/dashboard': typeof DashboardRoute
+  '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookies'
     | '/dashboard'
+    | '/history'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookies'
     | '/dashboard'
+    | '/history'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cookies'
     | '/dashboard'
+    | '/history'
     | '/login'
     | '/pricing'
     | '/privacy'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CookiesRoute: typeof CookiesRoute
   DashboardRoute: typeof DashboardRoute
+  HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -239,6 +259,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CookiesRoute: CookiesRoute,
   DashboardRoute: DashboardRoute,
+  HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
@@ -250,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

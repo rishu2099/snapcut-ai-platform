@@ -6,12 +6,20 @@ import { Download, Upload, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/result")({
   head: () => ({ meta: [{ title: "Result — SnapCut AI" }] }),
+  validateSearch: (search: Record<string, unknown>) => {
+    if (!search.imageUrl || typeof search.imageUrl !== 'string') {
+      throw new Error("Missing or invalid 'imageUrl' in search parameters.");
+    }
+    if (!search.originalImageUrl || typeof search.originalImageUrl !== 'string') {
+      throw new Error("Missing or invalid 'originalImageUrl' in search parameters.");
+    }
+    return { imageUrl: search.imageUrl, originalImageUrl: search.originalImageUrl };
+  },
   component: ResultPage,
 });
 
-const DEMO = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=900&q=80";
-
 function ResultPage() {
+  const { imageUrl, originalImageUrl } = Route.useSearch();
   return (
     <div className="min-h-screen">
       <Header />
@@ -24,11 +32,27 @@ function ResultPage() {
         </div>
 
         <div className="glass rounded-3xl p-3">
-          <BeforeAfter before={DEMO} after={DEMO} />
+          <BeforeAfter before={originalImageUrl} after={imageUrl} />
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <button className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 font-medium text-white shadow-glow">
+          <button onClick={async () => {
+            try {
+              const response = await fetch(imageUrl);
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'processed_image.png';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            } catch (error) {
+              console.error("Error downloading image:", error);
+              alert("Failed to download image. Please try again.");
+            }
+          }} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 font-medium text-white shadow-glow">
             <Download className="h-4 w-4" /> Download PNG
           </button>
           <Link to="/upload" className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 font-medium">

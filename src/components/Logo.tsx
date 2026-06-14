@@ -1,10 +1,10 @@
-import logoAsset from "@/assets/snapcut-logo.asset.json";
+const logoUrl = "/snapcut-logo.png";
 
 export function Logo({ withText = true, size = 32 }: { withText?: boolean; size?: number }) {
   return (
     <div className="flex items-center gap-2.5">
       <img
-        src={logoAsset.url}
+        src={logoUrl}
         alt="SnapCut AI"
         width={size}
         height={size}

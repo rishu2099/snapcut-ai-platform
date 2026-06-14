@@ -23,13 +23,61 @@ function UploadPage() {
     setPreview(URL.createObjectURL(f));
   }, []);
 
-  const process = () => {
+  const process = async () => {
+    if (!file) return;
+
     setProcessing(true);
-    setTimeout(() => navigate({ to: "/result" }), 1800);
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("https://rishupvt22.app.n8n.cloud/webhook/remove-backgroung", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const imageUrl = result.url;
+      const originalImageUrl = preview; // Use the preview URL as the original image URL
+
+      if (!imageUrl || !originalImageUrl) {
+        throw new Error("Webhook response did not contain an image URL or original image URL was missing.");
+      }
+
+      // Save to local storage
+      const history = JSON.parse(localStorage.getItem("imageHistory") || "[]");
+      history.push({ originalUrl: originalImageUrl, processedUrl: imageUrl, timestamp: new Date().toISOString() });
+      localStorage.setItem("imageHistory", JSON.stringify(history));
+
+      navigate({ to: "/result", search: { originalImageUrl, imageUrl } });
+    } catch (error) {
+      console.error("Error sending image to webhook:", error);
+      alert("Failed to process image. Please try again.");
+      setProcessing(false);
+    }
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" onPaste={(e) => {
+        e.preventDefault(); // Prevent default paste behavior
+        const items = e.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              const file = items[i].getAsFile();
+              if (file) {
+                handleFile(file);
+                break;
+              }
+            }
+          }
+        }
+      }}>
       <Header />
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Upload your <span className="text-gradient">image</span></h1>

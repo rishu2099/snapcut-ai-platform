@@ -48,10 +48,10 @@ function HomePage() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-40" />
+      <div className="absolute inset-0 grid-bg opacity-40 z-0" />
       <div className="absolute left-1/2 top-0 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-brand opacity-20 blur-3xl" />
       <div className="mx-auto grid max-w-7xl gap-12 px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-2 lg:gap-8 lg:pb-32">
-        <motion.div {...fadeUp} className="flex flex-col justify-center">
+        <motion.div {...fadeUp} className="relative z-10 flex flex-col justify-center">
           <span className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-cyan" />
             AI-powered background removal
