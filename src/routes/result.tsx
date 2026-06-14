@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BeforeAfter } from "@/components/BeforeAfter";
@@ -6,20 +6,24 @@ import { Download, Upload, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/result")({
   head: () => ({ meta: [{ title: "Result — SnapCut AI" }] }),
-  validateSearch: (search: Record<string, unknown>) => {
-    if (!search.imageUrl || typeof search.imageUrl !== 'string') {
-      throw new Error("Missing or invalid 'imageUrl' in search parameters.");
+  validateSearch: (search: Record<string, unknown>) => ({
+    imageUrl: typeof search.imageUrl === "string" ? search.imageUrl : undefined,
+    originalImageUrl:
+      typeof search.originalImageUrl === "string" && !search.originalImageUrl.startsWith("blob:")
+        ? search.originalImageUrl
+        : undefined,
+  }),
+  beforeLoad: ({ search }) => {
+    if (!search.imageUrl) {
+      throw redirect({ to: "/upload" });
     }
-    if (!search.originalImageUrl || typeof search.originalImageUrl !== 'string') {
-      throw new Error("Missing or invalid 'originalImageUrl' in search parameters.");
-    }
-    return { imageUrl: search.imageUrl, originalImageUrl: search.originalImageUrl };
   },
   component: ResultPage,
 });
 
 function ResultPage() {
   const { imageUrl, originalImageUrl } = Route.useSearch();
+
   return (
     <div className="min-h-screen">
       <Header />

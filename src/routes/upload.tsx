@@ -43,18 +43,16 @@ function UploadPage() {
 
       const result = await response.json();
       const imageUrl = result.url;
-      const originalImageUrl = preview; // Use the preview URL as the original image URL
 
-      if (!imageUrl || !originalImageUrl) {
-        throw new Error("Webhook response did not contain an image URL or original image URL was missing.");
+      if (!imageUrl) {
+        throw new Error("Webhook response did not contain an image URL.");
       }
 
-      // Save to local storage
       const history = JSON.parse(localStorage.getItem("imageHistory") || "[]");
-      history.push({ originalUrl: originalImageUrl, processedUrl: imageUrl, timestamp: new Date().toISOString() });
+      history.push({ originalUrl: preview ?? undefined, processedUrl: imageUrl, timestamp: new Date().toISOString() });
       localStorage.setItem("imageHistory", JSON.stringify(history));
 
-      navigate({ to: "/result", search: { originalImageUrl, imageUrl } });
+      navigate({ to: "/result", search: { originalImageUrl: preview ?? undefined, imageUrl } });
     } catch (error) {
       console.error("Error sending image to webhook:", error);
       alert("Failed to process image. Please try again.");

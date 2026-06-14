@@ -66,7 +66,7 @@
   --ring: #19D4FF;
 
   --gradient-brand: linear-gradient(135deg, #19D4FF 0%, #5B21B6 50%, #8B2CFF 100%);
-  --shadow-glow: 0 0 40px -8px rgba(25, 212, 255, 0.35), 0 0 80px -20px rgba(139, 44, 255, 0.35);
+  --shadow-glow: 0 0 20px -5px rgba(25, 212, 255, 0.2), 0 0 40px -10px rgba(139, 44, 255, 0.2);
   --shadow-card: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.6);
 }
 
