@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 export function BeforeAfter({
   before,
@@ -10,6 +10,7 @@ export function BeforeAfter({
   className?: string;
 }) {
   const [pos, setPos] = useState(50);
+  const [error, setError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (clientX: number) => {
@@ -19,6 +20,11 @@ export function BeforeAfter({
     const p = ((clientX - rect.left) / rect.width) * 100;
     setPos(Math.max(0, Math.min(100, p)));
   };
+
+  // Reset error when before url changes
+  useEffect(() => {
+    setError(false);
+  }, [before]);
 
   return (
     <div
@@ -37,24 +43,24 @@ export function BeforeAfter({
     >
       <img src={after} alt="After" className="absolute inset-0 h-full w-full object-contain" draggable={false} />
       <div className="absolute inset-0 overflow-hidden bg-[#0b1020]" style={{ width: `${pos}%` }}>
-        <img 
-          src={before ? decodeURIComponent(before) : undefined} 
-          alt="Before" 
-          className="absolute inset-0 h-full w-full object-cover" 
-          style={{ width: `${100 / (pos / 100)}%`, maxWidth: "none" }} 
-          draggable={false} 
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            if (e.currentTarget.parentElement) {
-              const text = document.createElement('div');
-              text.className = 'absolute inset-0 flex items-center justify-center text-sm text-muted-foreground text-center p-4 bg-[#1a1f2e]';
-              text.style.width = `${100 / (pos / 100)}%`;
-              text.style.maxWidth = 'none';
-              text.innerText = 'Original Image Unavailable (Session Expired)';
-              e.currentTarget.parentElement.appendChild(text);
-            }
-          }}
-        />
+        {!error && before ? (
+          <img 
+            key={before}
+            src={decodeURIComponent(before)} 
+            alt="Before" 
+            className="absolute inset-0 h-full w-full object-cover" 
+            style={{ width: `${100 / Math.max(pos / 100, 0.001)}%`, maxWidth: "none" }} 
+            draggable={false} 
+            onError={() => setError(true)}
+          />
+        ) : (
+          <div 
+            className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground text-center p-4 bg-[#1a1f2e]"
+            style={{ width: `${100 / Math.max(pos / 100, 0.001)}%`, maxWidth: "none" }}
+          >
+            {error ? 'Original Image Unavailable' : 'Loading Original Image...'}
+          </div>
+        )}
       </div>
       <div className="absolute inset-y-0 z-10 w-0.5 bg-gradient-brand" style={{ left: `${pos}%` }}>
         <div className="absolute top-1/2 left-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-brand shadow-glow">

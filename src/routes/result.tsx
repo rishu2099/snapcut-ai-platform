@@ -15,9 +15,10 @@ export const Route = createFileRoute("/result")({
         ? search.originalImageUrl
         : undefined,
     originalImageId: typeof search.originalImageId === "string" ? search.originalImageId : undefined,
+    processedImageId: typeof search.processedImageId === "string" ? search.processedImageId : undefined,
   }),
   beforeLoad: ({ search }) => {
-    if (!search.imageUrl) {
+    if (!search.imageUrl && !search.processedImageId) {
       throw redirect({ to: "/upload" });
     }
   },
@@ -25,8 +26,9 @@ export const Route = createFileRoute("/result")({
 });
 
 function ResultPage() {
-  const { imageUrl, originalImageUrl, originalImageId } = Route.useSearch();
+  const { imageUrl, originalImageUrl, originalImageId, processedImageId } = Route.useSearch();
   const [localBeforeUrl, setLocalBeforeUrl] = useState<string | undefined>(originalImageUrl);
+  const [localAfterUrl, setLocalAfterUrl] = useState<string | undefined>(imageUrl);
 
   useEffect(() => {
     if (originalImageId) {
@@ -37,6 +39,16 @@ function ResultPage() {
       }).catch(console.error);
     }
   }, [originalImageId]);
+
+  useEffect(() => {
+    if (processedImageId) {
+      getImage(processedImageId).then(blob => {
+        if (blob) {
+          setLocalAfterUrl(URL.createObjectURL(blob));
+        }
+      }).catch(console.error);
+    }
+  }, [processedImageId]);
 
   return (
     <div className="min-h-screen">
@@ -50,13 +62,15 @@ function ResultPage() {
         </div>
 
         <div className="glass rounded-3xl p-3">
-          <BeforeAfter before={localBeforeUrl} after={imageUrl} />
+          <BeforeAfter before={localBeforeUrl || ''} after={localAfterUrl || imageUrl || ''} />
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <button onClick={async () => {
             try {
-              const response = await fetch(imageUrl);
+              const urlToDownload = localAfterUrl || imageUrl;
+              if (!urlToDownload) return;
+              const response = await fetch(urlToDownload);
               const blob = await response.blob();
               const url = window.URL.createObjectURL(blob);
               const a = document.createElement('a');

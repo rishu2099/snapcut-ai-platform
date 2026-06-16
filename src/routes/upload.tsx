@@ -52,11 +52,51 @@ function UploadPage() {
       const imageId = crypto.randomUUID();
       await saveImage(imageId, file);
 
-      const history = JSON.parse(localStorage.getItem("imageHistory") || "[]");
-      history.push({ originalUrl: preview ?? undefined, originalImageId: imageId, processedUrl: imageUrl, timestamp: new Date().toISOString() });
-      localStorage.setItem("imageHistory", JSON.stringify(history));
+      let processedImageId = undefined;
+      try {
+        const res = await fetch(imageUrl);
+        const blob = await res.blob();
+        processedImageId = crypto.randomUUID();
+        await saveImage(processedImageId, blob);
+      } catch (e) {
+        console.error("Could not save processed image to IndexedDB", e);
+      }
 
-      navigate({ to: "/result", search: { originalImageUrl: preview ?? undefined, originalImageId: imageId, imageUrl } });
+      const history = JSON.parse(localStorage.getItem("imageHistory") || "[]");
+      const historyItem: any = { 
+        originalImageId: imageId, 
+        timestamp: new Date().toISOString() 
+      };
+      
+      if (processedImageId) {
+        historyItem.processedImageId = processedImageId;
+      }
+      
+      if (!imageUrl.startsWith("data:")) {
+        historyItem.processedUrl = imageUrl;
+      }
+
+      history.push(historyItem);
+
+      // Keep only last 20 items to prevent localStorage from filling up
+      if (history.length > 20) {
+        history.splice(0, history.length - 20);
+      }
+
+      try {
+        localStorage.setItem("imageHistory", JSON.stringify(history));
+      } catch (err) {
+        console.error("Failed to save history", err);
+      }
+
+      navigate({ 
+        to: "/result", 
+        search: { 
+          originalImageId: imageId, 
+          processedImageId: processedImageId,
+          imageUrl: imageUrl.startsWith("data:") ? undefined : imageUrl 
+        } 
+      });
     } catch (error) {
       console.error("Error sending image to webhook:", error);
       alert("Failed to process image. Please try again.");

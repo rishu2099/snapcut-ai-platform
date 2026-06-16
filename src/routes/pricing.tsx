@@ -52,7 +52,7 @@ function PricingPage() {
                   <li key={f} className="flex items-center gap-2 text-sm"><Check className={`h-4 w-4 ${p.highlight ? "text-white" : "text-cyan"}`} /> {f}</li>
                 ))}
               </ul>
-              <Link to="/signup" className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-foreground" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+              <Link to="/signup" className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-black" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
             </div>
           ))}
         </div>

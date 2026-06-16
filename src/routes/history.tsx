@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { getImage } from "@/lib/db";
 
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "History — SnapCut AI" }] }),
@@ -9,9 +10,56 @@ export const Route = createFileRoute("/history")({
 });
 
 interface ImageHistoryItem {
-  originalUrl: string;
-  processedUrl: string;
+  originalUrl?: string;
+  processedUrl?: string;
   timestamp: string;
+  originalImageId?: string;
+  processedImageId?: string;
+}
+
+function HistoryItemComponent({ item, index }: { item: ImageHistoryItem, index: number }) {
+  const [imageUrl, setImageUrl] = useState<string | undefined>(item.processedUrl);
+
+  useEffect(() => {
+    if (item.processedImageId && !item.processedUrl) {
+      getImage(item.processedImageId).then(blob => {
+        if (blob) setImageUrl(URL.createObjectURL(blob));
+      }).catch(console.error);
+    }
+  }, [item]);
+
+  return (
+    <div className="glass rounded-3xl p-3">
+      <Link to="/result" search={{ originalImageUrl: item.originalUrl, originalImageId: item.originalImageId, imageUrl: item.processedUrl, processedImageId: item.processedImageId }}>
+        {imageUrl ? (
+          <img src={imageUrl} alt={`Processed image from ${new Date(item.timestamp).toLocaleString()}`} className="w-full h-48 object-cover rounded-2xl" />
+        ) : (
+          <div className="w-full h-48 bg-gray-700 rounded-2xl flex items-center justify-center text-muted-foreground">Image Unavailable</div>
+        )}
+      </Link>
+      <p className="mt-2 text-sm text-muted-foreground">{new Date(item.timestamp).toLocaleString()}</p>
+      <button onClick={async () => {
+        try {
+          if (!imageUrl) return;
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `processed_image_${index}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("Error downloading image:", error);
+          alert("Failed to download image. Please try again.");
+        }
+      }} className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-4 py-2 text-sm font-medium text-white shadow-glow">
+        Download
+      </button>
+    </div>
+  );
 }
 
 function HistoryPage() {
@@ -36,35 +84,7 @@ function HistoryPage() {
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {imageHistory.map((item, index) => (
-              <div key={index} className="glass rounded-3xl p-3">
-                <Link to="/result" search={{ originalImageUrl: item.originalUrl, originalImageId: (item as any).originalImageId, imageUrl: item.processedUrl }}>
-                  {item.processedUrl ? (
-                    <img src={item.processedUrl} alt={`Processed image from ${new Date(item.timestamp).toLocaleString()}`} className="w-full h-48 object-cover rounded-2xl" />
-                  ) : (
-                    <div className="w-full h-48 bg-gray-700 rounded-2xl flex items-center justify-center text-muted-foreground">Image Unavailable</div>
-                  )}
-                </Link>
-                <p className="mt-2 text-sm text-muted-foreground">{new Date(item.timestamp).toLocaleString()}</p>
-                <button onClick={async () => {
-                  try {
-                    const response = await fetch(item.processedUrl);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `processed_image_${index}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error("Error downloading image:", error);
-                    alert("Failed to download image. Please try again.");
-                  }
-                }} className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-brand px-4 py-2 text-sm font-medium text-white shadow-glow">
-                  Download
-                </button>
-              </div>
+              <HistoryItemComponent key={index} item={item} index={index} />
             ))}
           </div>
         )}
