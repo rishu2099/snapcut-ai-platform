@@ -1,59 +1,251 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { Download, ImageIcon, TrendingUp, Zap } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { SidebarLayout } from "@/components/SidebarLayout";
+import { 
+  Upload, 
+  Image as ImageIcon, 
+  Sparkles, 
+  TrendingUp, 
+  Clock,
+  History,
+  Key,
+  Download
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { getImage } from "@/lib/db";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — SnapCut AI" }] }),
   component: Dashboard,
 });
 
-function Dashboard() {
-  const stats = [
-    { label: "Plan", value: "Pro", icon: Zap },
-    { label: "Credits left", value: "∞", icon: TrendingUp },
-    { label: "Images processed", value: "247", icon: ImageIcon },
-    { label: "Downloads", value: "192", icon: Download },
-  ];
+interface ImageHistoryItem {
+  originalUrl?: string;
+  processedUrl?: string;
+  timestamp: string;
+  originalImageId?: string;
+  processedImageId?: string;
+}
+
+function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number }) {
+  const navigate = useNavigate();
+  const date = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
+  // Make a readable name out of the index or ID
+  const name = `image_${new Date(item.timestamp).getTime().toString().slice(-6)}.png`;
+
+  const handleRowClick = () => {
+    navigate({
+      to: "/result",
+      search: {
+        originalImageUrl: item.originalUrl,
+        originalImageId: item.originalImageId,
+        imageUrl: item.processedUrl,
+        processedImageId: item.processedImageId
+      }
+    });
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent row click
+    try {
+      let urlToDownload = item.processedUrl;
+      
+      // If we have an ID but no URL, fetch from DB first
+      if (item.processedImageId && !urlToDownload) {
+        const blob = await getImage(item.processedImageId);
+        if (blob) {
+          urlToDownload = URL.createObjectURL(blob);
+        }
+      }
+
+      if (!urlToDownload) {
+        alert("Image not found");
+        return;
+      }
+
+      const response = await fetch(urlToDownload);
+      const blob = await response.blob();
+      const tempUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = tempUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(tempUrl);
+    } catch (error) {
+      console.error("Error downloading image:", error);
+      alert("Failed to download image. Please try again.");
+    }
+  };
+
   return (
-    <div className="min-h-screen">
-      <Header />
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-gradient-brand" />
-            <div>
-              <h1 className="text-2xl font-bold">Welcome back, Alex</h1>
-              <p className="text-sm text-muted-foreground">alex@snapcut.ai</p>
-            </div>
-          </div>
-          <Link to="/upload" className="rounded-full bg-gradient-brand px-5 py-2.5 text-sm font-medium text-white shadow-glow">New Image</Link>
+    <tr 
+      onClick={handleRowClick}
+      className="hover:bg-white/5 transition-colors cursor-pointer group"
+    >
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <ImageIcon className="h-5 w-5 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
+          <span className="text-white font-medium">{name}</span>
+        </div>
+      </td>
+      <td className="px-6 py-4 text-muted-foreground">{date}</td>
+      <td className="px-6 py-4">
+        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
+          completed
+        </span>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button 
+          onClick={handleDownload}
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-cyan-400 font-medium transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function Dashboard() {
+  const [history, setHistory] = useState<ImageHistoryItem[]>([]);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem("imageHistory");
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
+    }
+  }, []);
+
+  const thisMonthCount = history.filter(item => {
+    const itemDate = new Date(item.timestamp);
+    const now = new Date();
+    return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+  }).length;
+
+  const stats = [
+    { 
+      label: "Images Processed", 
+      value: history.length.toString(), 
+      icon: ImageIcon, 
+      badge: "+1", 
+      badgeColor: "text-emerald-400 bg-emerald-400/10" 
+    },
+    { 
+      label: "Credits Remaining", 
+      value: "3", 
+      icon: Sparkles 
+    },
+    { 
+      label: "This Month", 
+      value: thisMonthCount.toString(), 
+      icon: TrendingUp, 
+      badge: `+${thisMonthCount}`, 
+      badgeColor: "text-emerald-400 bg-emerald-400/10" 
+    },
+    { 
+      label: "Avg. Time", 
+      value: "3.2s", 
+      icon: Clock, 
+      badge: "-0.5s", 
+      badgeColor: "text-emerald-400 bg-emerald-400/10" 
+    },
+  ];
+
+  return (
+    <SidebarLayout>
+      <div className="px-8 py-8 max-w-7xl mx-auto">
+        {/* Top Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+          <Link
+            to="/upload"
+            className="flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-cyan-400"
+          >
+            <Upload className="h-4 w-4" />
+            New Upload
+          </Link>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Stats Row */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
           {stats.map((s) => (
-            <div key={s.label} className="glass rounded-2xl p-5">
-              <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs uppercase tracking-wider">{s.label}</span>
-                <s.icon className="h-4 w-4" />
+            <div key={s.label} className="flex flex-col justify-between rounded-2xl border border-border/40 bg-[#12141a] p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+                  <s.icon className="h-5 w-5" />
+                </div>
+                {s.badge && (
+                  <span className={`rounded-md px-2 py-1 text-xs font-medium ${s.badgeColor}`}>
+                    {s.badge}
+                  </span>
+                )}
               </div>
-              <div className="mt-2 text-3xl font-bold">{s.value}</div>
+              <div className="mt-4">
+                <div className="text-3xl font-bold text-white">{s.value}</div>
+                <div className="text-sm font-medium text-muted-foreground mt-1">{s.label}</div>
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="mt-12">
-          <h2 className="mb-4 text-xl font-semibold">Recent images</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="glass aspect-square overflow-hidden rounded-xl">
-                <div className="h-full w-full bg-gradient-brand opacity-30" style={{ filter: `hue-rotate(${i * 25}deg)` }} />
+        {/* Quick Actions */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Link to="/upload" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
+              <Upload className="h-6 w-6 text-cyan-400 mb-4" />
+              <h3 className="font-semibold text-white mb-1">Upload Image</h3>
+              <p className="text-sm text-muted-foreground">Remove background from a new image</p>
+            </Link>
+            <Link to="/history" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
+              <History className="h-6 w-6 text-cyan-400 mb-4" />
+              <h3 className="font-semibold text-white mb-1">View History</h3>
+              <p className="text-sm text-muted-foreground">Access your recent processed images</p>
+            </Link>
+            <Link to="/api" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
+              <Key className="h-6 w-6 text-purple-400 mb-4" />
+              <h3 className="font-semibold text-white mb-1">API Access</h3>
+              <p className="text-sm text-muted-foreground">Generate API keys for integration</p>
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Images Table */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-white">Recent Images</h2>
+            <Link to="/history" className="text-sm font-medium text-cyan-400 hover:text-cyan-300">View all</Link>
+          </div>
+          <div className="rounded-2xl border border-border/40 bg-[#12141a] overflow-hidden">
+            {history.length === 0 ? (
+              <div className="p-8 text-center">
+                <ImageIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">No images processed yet.</p>
+                <Link to="/upload" className="text-cyan-400 hover:underline text-sm font-medium mt-2 inline-block">Upload your first image</Link>
               </div>
-            ))}
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-muted-foreground border-b border-border/40">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Image</th>
+                    <th className="px-6 py-4 font-medium">Date</th>
+                    <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium text-right"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {history.slice(0, 5).map((img, i) => (
+                    <RecentImageRow key={img.timestamp + i} item={img} index={i} />
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
-      <Footer />
-    </div>
+    </SidebarLayout>
   );
 }

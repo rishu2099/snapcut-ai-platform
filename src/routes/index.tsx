@@ -242,7 +242,11 @@ function PricingPreview() {
                 </li>
               ))}
             </ul>
-            <Link to="/pricing" className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition ${p.highlight ? "bg-white text-black hover:scale-[1.02]" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+              {p.cta === "Start Pro Trial" ? (
+                <button onClick={() => import("@/lib/razorpay").then(m => m.openRazorpayCheckout(p.price as number))} className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition cursor-pointer ${p.highlight ? "bg-white text-black hover:scale-[1.02]" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</button>
+              ) : (
+                <Link to="/pricing" className={`mt-7 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition ${p.highlight ? "bg-white text-black hover:scale-[1.02]" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+              )}
           </div>
         ))}
       </div>

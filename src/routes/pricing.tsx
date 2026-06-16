@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Check } from "lucide-react";
@@ -17,6 +17,7 @@ const PLANS = (yearly: boolean) => [
 
 function PricingPage() {
   const [yearly, setYearly] = useState(false);
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -52,7 +53,11 @@ function PricingPage() {
                   <li key={f} className="flex items-center gap-2 text-sm"><Check className={`h-4 w-4 ${p.highlight ? "text-white" : "text-cyan"}`} /> {f}</li>
                 ))}
               </ul>
-              <Link to="/signup" className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-black" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+              {p.cta === "Start Pro Trial" ? (
+                <button onClick={() => import("@/lib/razorpay").then(m => m.openRazorpayCheckout(p.price as number))} className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-black hover:bg-neutral-200 cursor-pointer" : "border border-border bg-card hover:bg-secondary cursor-pointer"}`}>{p.cta}</button>
+              ) : (
+                <Link to="/signup" className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-medium ${p.highlight ? "bg-white text-black" : "border border-border bg-card hover:bg-secondary"}`}>{p.cta}</Link>
+              )}
             </div>
           ))}
         </div>
