@@ -1,17 +1,20 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BeforeAfter } from "@/components/BeforeAfter";
 import { Download, Upload, Sparkles } from "lucide-react";
+import { getImage } from "@/lib/db";
 
 export const Route = createFileRoute("/result")({
   head: () => ({ meta: [{ title: "Result — SnapCut AI" }] }),
   validateSearch: (search: Record<string, unknown>) => ({
     imageUrl: typeof search.imageUrl === "string" ? search.imageUrl : undefined,
     originalImageUrl:
-      typeof search.originalImageUrl === "string" && !search.originalImageUrl.startsWith("blob:")
+      typeof search.originalImageUrl === "string"
         ? search.originalImageUrl
         : undefined,
+    originalImageId: typeof search.originalImageId === "string" ? search.originalImageId : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.imageUrl) {
@@ -22,7 +25,18 @@ export const Route = createFileRoute("/result")({
 });
 
 function ResultPage() {
-  const { imageUrl, originalImageUrl } = Route.useSearch();
+  const { imageUrl, originalImageUrl, originalImageId } = Route.useSearch();
+  const [localBeforeUrl, setLocalBeforeUrl] = useState<string | undefined>(originalImageUrl);
+
+  useEffect(() => {
+    if (originalImageId) {
+      getImage(originalImageId).then(blob => {
+        if (blob) {
+          setLocalBeforeUrl(URL.createObjectURL(blob));
+        }
+      }).catch(console.error);
+    }
+  }, [originalImageId]);
 
   return (
     <div className="min-h-screen">
@@ -36,7 +50,7 @@ function ResultPage() {
         </div>
 
         <div className="glass rounded-3xl p-3">
-          <BeforeAfter before={originalImageUrl} after={imageUrl} />
+          <BeforeAfter before={localBeforeUrl} after={imageUrl} />
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">

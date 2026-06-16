@@ -208,9 +208,9 @@ function Testimonials() {
 }
 
 const PLANS = [
-  { name: "Free", price: "$0", desc: "Try it out", features: ["5 removals / day", "Standard quality", "Watermarked download"], cta: "Start free", highlight: false },
-  { name: "Pro", price: "$12", desc: "For creators", features: ["Unlimited removals", "HD downloads", "No watermark", "Faster processing"], cta: "Go Pro", highlight: true },
-  { name: "Business", price: "$49", desc: "For teams", features: ["Bulk processing", "API access", "Priority support", "Team seats"], cta: "Contact sales", highlight: false },
+  { name: "Free", price: 0, desc: "Perfect for trying out SnapCut AI.", features: ["5 images per day", "Standard quality output", "Watermarked downloads"], cta: "Get Started", highlight: false },
+  { name: "Pro", price: 499, desc: "For professionals and creators", features: ["Unlimited images", "HD quality output", "No watermark", "Faster processing"], cta: "Start Pro Trial", highlight: true },
+  { name: "Enterprise", price: "Custom", desc: "For teams and large scale usage", features: ["Bulk processing", "API access", "Priority support", "Team seats"], cta: "Contact Sales", highlight: false },
 ];
 
 function PricingPreview() {
@@ -222,8 +222,16 @@ function PricingPreview() {
             {p.highlight && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">Most Popular</span>}
             <div className={`text-sm font-medium ${p.highlight ? "text-white/80" : "text-muted-foreground"}`}>{p.name}</div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-5xl font-bold tracking-tight">{p.price}</span>
-              <span className={`text-sm ${p.highlight ? "text-white/70" : "text-muted-foreground"}`}>/mo</span>
+              {p.name === "Free" ? (
+                <span className="text-5xl font-bold tracking-tight">₹{p.price} <span className="text-xl font-normal">forever</span></span>
+              ) : typeof p.price === "number" ? (
+                <>
+                  <span className="text-5xl font-bold tracking-tight">₹{p.price}</span>
+                  <span className={`text-sm ${p.highlight ? "text-white/70" : "text-muted-foreground"}`}>/month</span>
+                </>
+              ) : (
+                <span className="text-4xl font-bold tracking-tight">{p.price}</span>
+              )}
             </div>
             <p className={`mt-1 text-sm ${p.highlight ? "text-white/80" : "text-muted-foreground"}`}>{p.desc}</p>
             <ul className="mt-6 space-y-3">

@@ -1,0 +1,1 @@
+const t="snapcut:last-result";function e(s){sessionStorage.setItem(t,JSON.stringify(s))}function n(){try{const s=sessionStorage.getItem(t);return s?JSON.parse(s):null}catch{return null}}export{n as l,e as s};

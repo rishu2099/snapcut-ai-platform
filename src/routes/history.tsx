@@ -37,7 +37,7 @@ function HistoryPage() {
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {imageHistory.map((item, index) => (
               <div key={index} className="glass rounded-3xl p-3">
-                <Link to="/result" search={{ originalImageUrl: item.originalUrl, imageUrl: item.processedUrl }}>
+                <Link to="/result" search={{ originalImageUrl: item.originalUrl, originalImageId: (item as any).originalImageId, imageUrl: item.processedUrl }}>
                   {item.processedUrl ? (
                     <img src={item.processedUrl} alt={`Processed image from ${new Date(item.timestamp).toLocaleString()}`} className="w-full h-48 object-cover rounded-2xl" />
                   ) : (

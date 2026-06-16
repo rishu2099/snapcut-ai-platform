@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Upload as UploadIcon, ImageIcon, Loader2 } from "lucide-react";
+import { saveImage } from "@/lib/db";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({ meta: [{ title: "Upload — SnapCut AI" }] }),
@@ -48,11 +49,14 @@ function UploadPage() {
         throw new Error("Webhook response did not contain an image URL.");
       }
 
+      const imageId = crypto.randomUUID();
+      await saveImage(imageId, file);
+
       const history = JSON.parse(localStorage.getItem("imageHistory") || "[]");
-      history.push({ originalUrl: preview ?? undefined, processedUrl: imageUrl, timestamp: new Date().toISOString() });
+      history.push({ originalUrl: preview ?? undefined, originalImageId: imageId, processedUrl: imageUrl, timestamp: new Date().toISOString() });
       localStorage.setItem("imageHistory", JSON.stringify(history));
 
-      navigate({ to: "/result", search: { originalImageUrl: preview ?? undefined, imageUrl } });
+      navigate({ to: "/result", search: { originalImageUrl: preview ?? undefined, originalImageId: imageId, imageUrl } });
     } catch (error) {
       console.error("Error sending image to webhook:", error);
       alert("Failed to process image. Please try again.");
