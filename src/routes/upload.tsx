@@ -94,7 +94,8 @@ function UploadPage() {
         search: { 
           originalImageId: imageId, 
           processedImageId: processedImageId,
-          imageUrl: imageUrl.startsWith("data:") ? undefined : imageUrl 
+          imageUrl: imageUrl.startsWith("data:") ? undefined : imageUrl,
+          originalImageUrl: preview ?? undefined
         } 
       });
     } catch (error) {
