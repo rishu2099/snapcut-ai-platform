@@ -56,7 +56,6 @@ function SettingsPage() {
     if (error) showMessage(error.message, "error");
     else {
       showMessage("Profile updated successfully", "success");
-      window.location.reload(); // Quick refresh to update the sidebar state
     }
   };
 
