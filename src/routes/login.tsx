@@ -1,8 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Logo } from "@/components/Logo";
 import { Mail, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — SnapCut AI" }] }),
@@ -10,6 +13,51 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      if (data.session) {
+        toast.success("Logged in successfully!");
+        navigate({ to: "/dashboard" });
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred during sign in.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        }
+      });
+      if (error) toast.error(error.message);
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred with Google sign in.");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -20,17 +68,40 @@ function Login() {
             <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
             <p className="mt-1 text-sm text-muted-foreground">Sign in to your SnapCut AI account</p>
           </div>
-          <button className="mt-8 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium hover:bg-secondary">
+          <button 
+            onClick={handleGoogleLogin}
+            type="button"
+            className="mt-8 flex w-full items-center justify-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium hover:bg-secondary transition-colors"
+          >
             <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1H12v3.2h5.35c-.23 1.5-1.6 4.4-5.35 4.4-3.22 0-5.85-2.67-5.85-5.95 0-3.28 2.63-5.95 5.85-5.95 1.83 0 3.06.78 3.76 1.45l2.57-2.47C16.78 4.3 14.6 3.4 12 3.4 6.92 3.4 2.8 7.5 2.8 12.55s4.12 9.15 9.2 9.15c5.3 0 8.82-3.72 8.82-8.97 0-.6-.06-1.06-.17-1.63z"/></svg>
             Continue with Google
           </button>
           <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><div className="h-px flex-1 bg-border" /> OR <div className="h-px flex-1 bg-border" /></div>
-          <form className="space-y-3" onSubmit={(e)=>e.preventDefault()}>
-            <input type="email" placeholder="you@email.com" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-cyan" />
-            <input type="password" placeholder="Password" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-cyan" />
-            <button className="w-full rounded-full bg-gradient-brand px-5 py-3 text-sm font-medium text-white shadow-glow">Sign in</button>
+          <form className="space-y-3" onSubmit={handleLogin}>
+            <input 
+              type="email" 
+              placeholder="you@email.com" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-cyan" 
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-cyan" 
+            />
+            <button 
+              disabled={isLoading}
+              className="w-full rounded-full bg-gradient-brand px-5 py-3 text-sm font-medium text-white shadow-glow disabled:opacity-50"
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
           </form>
-          <button className="mt-3 flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button type="button" className="mt-3 flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <Sparkles className="h-3.5 w-3.5" /> Send magic link
           </button>
           <p className="mt-6 text-center text-sm text-muted-foreground">

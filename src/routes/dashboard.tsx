@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { SidebarLayout } from "@/components/SidebarLayout";
+import { supabase } from "@/lib/supabase";
 import { 
   Upload, 
   Image as ImageIcon, 
@@ -16,22 +17,33 @@ import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — SnapCut AI" }] }),
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw redirect({
+        to: "/login",
+      });
+    }
+  },
   component: Dashboard,
 });
 
 interface ImageHistoryItem {
+  id?: string;
   originalUrl?: string;
   processedUrl?: string;
   timestamp: string;
   originalImageId?: string;
   processedImageId?: string;
+  fileName?: string;
+  downloadCount?: number;
+  generationTimeMs?: number;
 }
 
 function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number }) {
   const navigate = useNavigate();
   const date = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
-  // Make a readable name out of the index or ID
-  const name = `image_${new Date(item.timestamp).getTime().toString().slice(-6)}.png`;
+  const name = item.fileName || `image_${new Date(item.timestamp).getTime().toString().slice(-6)}.png`;
 
   const handleRowClick = () => {
     navigate({
@@ -73,6 +85,16 @@ function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number
       a.click();
       a.remove();
       window.URL.revokeObjectURL(tempUrl);
+
+      // Increment download count in Supabase
+      if (item.id) {
+        await supabase.rpc('increment_download_count', { row_id: item.id }).catch(() => {
+          // If RPC fails, try standard update (if RLS allows)
+          const newCount = (item.downloadCount || 0) + 1;
+          supabase.from('image_history').update({ download_count: newCount }).eq('id', item.id).then();
+        });
+      }
+      window.URL.revokeObjectURL(tempUrl);
     } catch (error) {
       console.error("Error downloading image:", error);
       alert("Failed to download image. Please try again.");
@@ -111,46 +133,86 @@ function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number
 
 function Dashboard() {
   const [history, setHistory] = useState<ImageHistoryItem[]>([]);
+  const [statsData, setStatsData] = useState({ credits: 0, avgTime: '0s', total: 0, thisMonth: 0 });
 
   useEffect(() => {
-    const storedHistory = localStorage.getItem("imageHistory");
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-  }, []);
+    const fetchHistoryAndStats = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        // Fetch History
+        const { data: histData, error: histError } = await supabase.from('image_history')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        let historyList: ImageHistoryItem[] = [];
+        if (!histError && histData) {
+          historyList = histData.map((item: any) => ({
+            id: item.id,
+            processedUrl: item.processed_url,
+            originalUrl: item.original_url,
+            timestamp: item.created_at,
+            fileName: item.file_name,
+            downloadCount: item.download_count,
+            generationTimeMs: item.generation_time_ms
+          }));
+          setHistory(historyList);
+        }
 
-  const thisMonthCount = history.filter(item => {
-    const itemDate = new Date(item.timestamp);
-    const now = new Date();
-    return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-  }).length;
+        // Fetch Credits
+        const { data: profile } = await supabase.from('profiles').select('credits').eq('id', session.user.id).single();
+        const credits = profile ? profile.credits : 0;
+
+        // Calc Stats
+        const total = historyList.length;
+        let sumMs = 0;
+        let validTimeCount = 0;
+        let thisMonth = 0;
+        const now = new Date();
+
+        historyList.forEach((item: any) => {
+           if (item.generationTimeMs) {
+             sumMs += item.generationTimeMs;
+             validTimeCount++;
+           }
+           const d = new Date(item.timestamp);
+           if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+             thisMonth++;
+           }
+        });
+
+        let avgTimeStr = '0s';
+        if (validTimeCount > 0) {
+           avgTimeStr = (sumMs / validTimeCount / 1000).toFixed(1) + 's';
+        }
+
+        setStatsData({ credits, avgTime: avgTimeStr, total, thisMonth });
+      }
+    };
+
+    fetchHistoryAndStats();
+  }, []);
 
   const stats = [
     { 
       label: "Images Processed", 
-      value: history.length.toString(), 
+      value: statsData.total.toString(), 
       icon: ImageIcon, 
-      badge: "+1", 
-      badgeColor: "text-emerald-400 bg-emerald-400/10" 
     },
     { 
       label: "Credits Remaining", 
-      value: "3", 
+      value: statsData.credits.toString(), 
       icon: Sparkles 
     },
     { 
       label: "This Month", 
-      value: thisMonthCount.toString(), 
+      value: statsData.thisMonth.toString(), 
       icon: TrendingUp, 
-      badge: `+${thisMonthCount}`, 
-      badgeColor: "text-emerald-400 bg-emerald-400/10" 
     },
     { 
       label: "Avg. Time", 
-      value: "3.2s", 
+      value: statsData.avgTime, 
       icon: Clock, 
-      badge: "-0.5s", 
-      badgeColor: "text-emerald-400 bg-emerald-400/10" 
     },
   ];
 

@@ -1,12 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Upload as UploadIcon, ImageIcon, Loader2 } from "lucide-react";
 import { saveImage } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({ meta: [{ title: "Upload — SnapCut AI" }] }),
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw redirect({
+        to: "/login",
+      });
+    }
+  },
   component: UploadPage,
 });
 
@@ -29,10 +38,26 @@ function UploadPage() {
 
     setProcessing(true);
 
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("You must be logged in to process images.");
+        setProcessing(false);
+        return;
+      }
+
+      const { data: profile } = await supabase.from('profiles').select('credits').eq('id', session.user.id).single();
+      if (!profile || profile.credits <= 0) {
+        alert("Not enough credits. Please upgrade to Pro.");
+        setProcessing(false);
+        return;
+      }
+
+      const startTime = Date.now();
+
     const formData = new FormData();
     formData.append("image", file);
 
-    try {
       const response = await fetch("https://rishupvt22.app.n8n.cloud/webhook/remove-backgroung", {
         method: "POST",
         body: formData,
@@ -87,6 +112,31 @@ function UploadPage() {
         localStorage.setItem("imageHistory", JSON.stringify(history));
       } catch (err) {
         console.error("Failed to save history", err);
+      }
+
+      const endTime = Date.now();
+      const generationTimeMs = endTime - startTime;
+
+      // Save to Supabase DB if logged in
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && imageUrl && !imageUrl.startsWith("data:")) {
+          await supabase.from('image_history').insert({
+            user_id: session.user.id,
+            processed_url: imageUrl,
+            original_url: null, // blob urls are not persistent
+            file_name: file.name || 'Untitled Image',
+            generation_time_ms: generationTimeMs
+          });
+
+          // Deduct 1 credit
+          const { data: profile } = await supabase.from('profiles').select('credits').eq('id', session.user.id).single();
+          if (profile) {
+            await supabase.from('profiles').update({ credits: profile.credits - 1 }).eq('id', session.user.id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to save to Supabase", err);
       }
 
       navigate({ 

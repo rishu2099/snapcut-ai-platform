@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { ReactNode } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   LayoutDashboard, 
   Upload, 
@@ -21,6 +22,8 @@ const SIDEBAR_LINKS = [
 
 export function SidebarLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const { user } = useAuth();
+
 
   return (
     <div className="flex min-h-screen bg-[#0a0c10] text-foreground font-sans">
@@ -57,24 +60,38 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        {/* Plan Widget */}
-        <div className="mt-auto rounded-2xl border border-border/40 bg-[#12141a] p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-white">Free Plan</div>
-              <div className="text-xs text-muted-foreground">3 credits left</div>
+        {/* User Profile / Plan Widget */}
+        {user ? (
+          <div className="mt-auto rounded-2xl border border-border/40 bg-[#12141a] p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 font-bold">
+                {user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <div className="overflow-hidden">
+                <div className="text-sm font-semibold text-white truncate">{user.user_metadata?.full_name || 'User'}</div>
+                <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+              </div>
             </div>
           </div>
-          <Link
-            to="/pricing"
-            className="flex w-full items-center justify-center rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-[1.02]"
-          >
-            Upgrade to Pro
-          </Link>
-        </div>
+        ) : (
+          <div className="mt-auto rounded-2xl border border-border/40 bg-[#12141a] p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">Free Plan</div>
+                <div className="text-xs text-muted-foreground">3 credits left</div>
+              </div>
+            </div>
+            <Link
+              to="/pricing"
+              className="flex w-full items-center justify-center rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition-transform hover:scale-[1.02]"
+            >
+              Upgrade to Pro
+            </Link>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}

@@ -39,11 +39,36 @@ export async function openRazorpayCheckout(amount: number) {
     name: "SnapCut AI",
     description: "Pro Subscription Checkout",
     // Omitting the 'image' property forces Razorpay to auto-generate the nice 'S' letter logo!
-    handler: function (response: any) {
+    handler: async function (response: any) {
       toast.success("Payment Successful!", {
         description: `Payment ID: ${response.razorpay_payment_id}. Your account has been upgraded.`,
       });
       // In a full MERN stack, we would now verify response.razorpay_signature on our backend.
+      
+      // Update credits in Supabase
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (profile) {
+            const newCredits = profile.credits + 10;
+            const expires = new Date();
+            expires.setMonth(expires.getMonth() + 1);
+            
+            await supabase.from('profiles').update({ 
+              credits: newCredits,
+              is_pro: true,
+              pro_expires_at: expires.toISOString()
+            }).eq('id', session.user.id);
+            
+            toast.success("Credits added!", { description: "You received 10 Pro credits valid for 1 month." });
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to upgrade account", e);
+      }
     },
     prefill: {
       name: "Snapcut User",
