@@ -8,11 +8,13 @@ import { User, Mail, Lock, AlertTriangle, Save, Loader2, Trash2 } from "lucide-r
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — SnapCut AI" }] }),
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw redirect({
-        to: "/login",
-      });
+    if (typeof window !== 'undefined') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw redirect({
+          to: "/login",
+        });
+      }
     }
   },
   component: SettingsPage,

@@ -10,11 +10,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — SnapCut AI" }] }),
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      throw redirect({
-        to: "/dashboard",
-      });
+    if (typeof window !== 'undefined') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        throw redirect({
+          to: "/dashboard",
+        });
+      }
     }
   },
   component: Login,

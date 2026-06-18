@@ -18,11 +18,13 @@ import { formatDistanceToNow } from "date-fns";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — SnapCut AI" }] }),
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw redirect({
-        to: "/login",
-      });
+    if (typeof window !== 'undefined') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw redirect({
+          to: "/login",
+        });
+      }
     }
   },
   component: Dashboard,

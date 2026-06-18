@@ -10,11 +10,13 @@ import { Edit2, Download as DownloadIcon } from "lucide-react";
 export const Route = createFileRoute("/history")({
   head: () => ({ meta: [{ title: "History — SnapCut AI" }] }),
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw redirect({
-        to: "/login",
-      });
+    if (typeof window !== 'undefined') {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw redirect({
+          to: "/login",
+        });
+      }
     }
   },
   component: HistoryPage,
