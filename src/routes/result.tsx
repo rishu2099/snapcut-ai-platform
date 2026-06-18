@@ -16,6 +16,7 @@ export const Route = createFileRoute("/result")({
         : undefined,
     originalImageId: typeof search.originalImageId === "string" ? search.originalImageId : undefined,
     processedImageId: typeof search.processedImageId === "string" ? search.processedImageId : undefined,
+    historyId: typeof search.historyId === "string" ? search.historyId : undefined,
   }),
   beforeLoad: ({ search }) => {
     if (!search.imageUrl && !search.processedImageId) {
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/result")({
 });
 
 function ResultPage() {
-  const { imageUrl, originalImageUrl, originalImageId, processedImageId } = Route.useSearch();
+  const { imageUrl, originalImageUrl, originalImageId, processedImageId, historyId } = Route.useSearch();
   const [localBeforeUrl, setLocalBeforeUrl] = useState<string | undefined>(originalImageUrl);
   const [localAfterUrl, setLocalAfterUrl] = useState<string | undefined>(imageUrl);
 
@@ -34,7 +35,9 @@ function ResultPage() {
     if (originalImageId) {
       getImage(originalImageId).then(blob => {
         if (blob) {
-          setLocalBeforeUrl(URL.createObjectURL(blob));
+          const objectUrl = URL.createObjectURL(blob);
+          setLocalBeforeUrl(objectUrl);
+          return () => URL.revokeObjectURL(objectUrl);
         }
       }).catch(console.error);
     }
@@ -80,6 +83,18 @@ function ResultPage() {
               a.click();
               a.remove();
               window.URL.revokeObjectURL(url);
+
+              if (historyId) {
+                import("@/lib/supabase").then(({ supabase }) => {
+                  supabase.rpc('increment_download_count', { row_id: historyId }).catch(() => {
+                    supabase.from('image_history').select('download_count').eq('id', historyId).single().then(({ data }) => {
+                      if (data) {
+                        supabase.from('image_history').update({ download_count: data.download_count + 1 }).eq('id', historyId).then();
+                      }
+                    });
+                  });
+                });
+              }
             } catch (error) {
               console.error("Error downloading image:", error);
               alert("Failed to download image. Please try again.");

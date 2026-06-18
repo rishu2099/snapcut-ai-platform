@@ -117,17 +117,23 @@ function UploadPage() {
       const endTime = Date.now();
       const generationTimeMs = endTime - startTime;
 
+      let historyIdToPass: string | undefined = undefined;
+
       // Save to Supabase DB if logged in
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && imageUrl && !imageUrl.startsWith("data:")) {
-          await supabase.from('image_history').insert({
+          const { data: insertedData } = await supabase.from('image_history').insert({
             user_id: session.user.id,
             processed_url: imageUrl,
             original_url: null, // blob urls are not persistent
             file_name: file.name || 'Untitled Image',
             generation_time_ms: generationTimeMs
-          });
+          }).select('id').single();
+
+          if (insertedData) {
+            historyIdToPass = insertedData.id;
+          }
 
           // Deduct 1 credit
           const { data: profile } = await supabase.from('profiles').select('credits').eq('id', session.user.id).single();
@@ -145,7 +151,8 @@ function UploadPage() {
           originalImageId: imageId, 
           processedImageId: processedImageId,
           imageUrl: imageUrl.startsWith("data:") ? undefined : imageUrl,
-          originalImageUrl: preview ?? undefined
+          originalImageUrl: preview ?? undefined,
+          historyId: historyIdToPass
         } 
       });
     } catch (error) {

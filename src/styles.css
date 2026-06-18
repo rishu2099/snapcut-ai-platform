@@ -131,3 +131,11 @@
   50% { box-shadow: 0 0 60px -10px rgba(25,212,255,.8), 0 0 100px -20px rgba(139,44,255,.8); }
 }
 @utility animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+
+/* Whitelabeling - Hide Lovable Badge */
+#lovable-badge-container, 
+#lovable-badge, 
+.lovable-badge, 
+a[href*="lovable.dev"] {
+  display: none !important;
+}

@@ -44,6 +44,7 @@ function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number
   const navigate = useNavigate();
   const date = formatDistanceToNow(new Date(item.timestamp), { addSuffix: true });
   const name = item.fileName || `image_${new Date(item.timestamp).getTime().toString().slice(-6)}.png`;
+  const [localDownloadCount, setLocalDownloadCount] = useState(item.downloadCount || 0);
 
   const handleRowClick = () => {
     navigate({
@@ -88,9 +89,10 @@ function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number
 
       // Increment download count in Supabase
       if (item.id) {
+        setLocalDownloadCount(prev => prev + 1);
         await supabase.rpc('increment_download_count', { row_id: item.id }).catch(() => {
           // If RPC fails, try standard update (if RLS allows)
-          const newCount = (item.downloadCount || 0) + 1;
+          const newCount = localDownloadCount + 1;
           supabase.from('image_history').update({ download_count: newCount }).eq('id', item.id).then();
         });
       }
@@ -117,6 +119,9 @@ function RecentImageRow({ item, index }: { item: ImageHistoryItem; index: number
         <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
           completed
         </span>
+      </td>
+      <td className="px-6 py-4 text-muted-foreground">
+        {localDownloadCount}
       </td>
       <td className="px-6 py-4 text-right">
         <button 
@@ -262,11 +267,11 @@ function Dashboard() {
               <h3 className="font-semibold text-white mb-1">Upload Image</h3>
               <p className="text-sm text-muted-foreground">Remove background from a new image</p>
             </Link>
-            <Link to="/history" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
+            <a href="#history" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
               <History className="h-6 w-6 text-cyan-400 mb-4" />
               <h3 className="font-semibold text-white mb-1">View History</h3>
               <p className="text-sm text-muted-foreground">Access your recent processed images</p>
-            </Link>
+            </a>
             <Link to="/api" className="group rounded-2xl border border-border/40 bg-[#12141a] p-6 transition-colors hover:bg-[#1a1d24]">
               <Key className="h-6 w-6 text-purple-400 mb-4" />
               <h3 className="font-semibold text-white mb-1">API Access</h3>
@@ -276,10 +281,9 @@ function Dashboard() {
         </div>
 
         {/* Recent Images Table */}
-        <div>
+        <div id="history" className="scroll-mt-24">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">Recent Images</h2>
-            <Link to="/history" className="text-sm font-medium text-cyan-400 hover:text-cyan-300">View all</Link>
+            <h2 className="text-lg font-semibold text-white">Processed Images History</h2>
           </div>
           <div className="rounded-2xl border border-border/40 bg-[#12141a] overflow-hidden">
             {history.length === 0 ? (
@@ -295,11 +299,12 @@ function Dashboard() {
                     <th className="px-6 py-4 font-medium">Image</th>
                     <th className="px-6 py-4 font-medium">Date</th>
                     <th className="px-6 py-4 font-medium">Status</th>
+                    <th className="px-6 py-4 font-medium">Downloads</th>
                     <th className="px-6 py-4 font-medium text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
-                  {history.slice(0, 5).map((img, i) => (
+                  {history.map((img, i) => (
                     <RecentImageRow key={img.timestamp + i} item={img} index={i} />
                   ))}
                 </tbody>

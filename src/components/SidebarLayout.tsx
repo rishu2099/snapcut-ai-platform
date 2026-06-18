@@ -14,7 +14,6 @@ import {
 const SIDEBAR_LINKS = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Upload", path: "/upload", icon: Upload },
-  { name: "History", path: "/history", icon: History },
   { name: "Billing", path: "/pricing", icon: CreditCard },
   { name: "API Keys", path: "/api", icon: Key },
   { name: "Settings", path: "/settings", icon: Settings },
