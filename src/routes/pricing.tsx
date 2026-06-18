@@ -10,8 +10,8 @@ export const Route = createFileRoute("/pricing")({
 });
 
 const PLANS = (yearly: boolean) => [
-  { name: "Free", price: 0, desc: "Perfect for trying out SnapCut AI.", features: ["5 images per day", "Standard quality output", "Basic formats (PNG, JPG)", "Email support"], cta: "Get Started", highlight: false },
-  { name: "Pro", price: yearly ? 499 * 12 : 499, desc: "For professionals and creators", features: ["Unlimited images", "HD quality output", "All formats (PNG, JPG, WEBP)", "Batch processing", "Priority processing", "API access (1,000 calls/mo)"], cta: "Start Pro Trial", highlight: true },
+  { name: "Free", price: 0, desc: "Perfect for trying out SnapCut AI.", features: ["2 free credits", "Standard quality output", "Basic formats (PNG, JPG)", "Email support"], cta: "Get Started", highlight: false },
+  { name: "Pro", price: yearly ? 499 * 12 : 499, desc: "For professionals and creators", features: ["150 Credits / month", "HD quality output", "All formats (PNG, JPG, WEBP)", "Batch processing", "Priority processing", "API access included"], cta: "Start Pro Trial", highlight: true },
   { name: "Enterprise", price: "Custom", desc: "For teams and large scale usage", features: ["Everything in Pro", "Unlimited API calls", "Custom integrations", "Dedicated support", "SLA guarantee", "Custom contracts"], cta: "Contact Sales", highlight: false },
 ];
 

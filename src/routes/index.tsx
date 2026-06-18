@@ -208,8 +208,8 @@ function Testimonials() {
 }
 
 const PLANS = [
-  { name: "Free", price: 0, desc: "Perfect for trying out SnapCut AI.", features: ["5 images per day", "Standard quality output", "Watermarked downloads"], cta: "Get Started", highlight: false },
-  { name: "Pro", price: 499, desc: "For professionals and creators", features: ["Unlimited images", "HD quality output", "No watermark", "Faster processing"], cta: "Start Pro Trial", highlight: true },
+  { name: "Free", price: 0, desc: "Perfect for trying out SnapCut AI.", features: ["2 free credits", "Standard quality output", "Watermarked downloads"], cta: "Get Started", highlight: false },
+  { name: "Pro", price: 499, desc: "For professionals and creators", features: ["150 Credits / month", "HD quality output", "No watermark", "Faster processing", "API access included"], cta: "Start Pro Trial", highlight: true },
   { name: "Enterprise", price: "Custom", desc: "For teams and large scale usage", features: ["Bulk processing", "API access", "Priority support", "Team seats"], cta: "Contact Sales", highlight: false },
 ];
 
