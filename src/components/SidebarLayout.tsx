@@ -62,7 +62,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
 
         {/* User Profile / Plan Widget */}
         {user ? (
-          <div className="mt-auto rounded-2xl border border-border/40 bg-[#12141a] p-4">
+          <Link to="/settings" className="mt-auto block rounded-2xl border border-border/40 bg-[#12141a] p-4 transition-colors hover:bg-[#1a1d24]">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 font-bold">
                 {user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || 'U'}
@@ -72,7 +72,7 @@ export function SidebarLayout({ children }: { children: ReactNode }) {
                 <div className="text-xs text-muted-foreground truncate">{user.email}</div>
               </div>
             </div>
-          </div>
+          </Link>
         ) : (
           <div className="mt-auto rounded-2xl border border-border/40 bg-[#12141a] p-4">
             <div className="flex items-center gap-3 mb-3">
