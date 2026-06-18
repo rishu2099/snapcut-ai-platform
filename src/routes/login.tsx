@@ -60,6 +60,31 @@ function Login() {
     }
   };
 
+  const handleMagicLink = async () => {
+    if (!email) {
+      toast.error("Please enter your email first to send a magic link");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        }
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Magic link sent! Please check your inbox.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send magic link.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -117,7 +142,12 @@ function Login() {
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
-          <button type="button" className="mt-3 flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button 
+            type="button" 
+            onClick={handleMagicLink}
+            disabled={isLoading}
+            className="mt-3 flex w-full items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
             <Sparkles className="h-3.5 w-3.5" /> Send magic link
           </button>
           <p className="mt-6 text-center text-sm text-muted-foreground">
