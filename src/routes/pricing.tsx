@@ -15,6 +15,12 @@ const PLANS = (yearly: boolean) => [
   { name: "Enterprise", price: "Custom", desc: "For teams and large scale usage", features: ["Everything in Pro", "Unlimited API calls", "Custom integrations", "Dedicated support", "SLA guarantee", "Custom contracts"], cta: "Contact Sales", highlight: false },
 ];
 
+const CREDIT_PACKS = [
+  { credits: 50, price: 199, highlight: false },
+  { credits: 200, price: 699, highlight: true },
+  { credits: 500, price: 1499, highlight: false },
+];
+
 function PricingPage() {
   const [yearly, setYearly] = useState(false);
 
@@ -60,6 +66,29 @@ function PricingPage() {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Pay-As-You-Go Credits */}
+        <div className="mt-32 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-white">Pay-As-You-Go Credits</h2>
+          <p className="mt-4 text-muted-foreground">Need more flexibility? Purchase credit packs that never expire.</p>
+          <div className="mt-12 grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
+            {CREDIT_PACKS.map((pack) => (
+              <div 
+                key={pack.credits} 
+                className={`relative rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
+                  pack.highlight 
+                    ? "border border-cyan-500/40 bg-gradient-to-b from-cyan-500/10 to-transparent shadow-[0_0_30px_rgba(6,182,212,0.15)]" 
+                    : "border border-border/40 bg-[#12141a] hover:border-cyan-500/30 hover:bg-[#1a1d24]"
+                }`}
+              >
+                <div className="text-4xl font-bold text-white mb-2">{pack.credits}</div>
+                <div className="text-sm font-medium text-muted-foreground mb-8">credits</div>
+                <div className="text-4xl font-bold text-cyan-400">₹{pack.price.toLocaleString()}</div>
+                <div className="text-xs text-muted-foreground mt-2">₹{(pack.price / pack.credits).toFixed(2)}/image</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <Footer />
