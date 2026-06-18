@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { getImage } from "@/lib/db";
@@ -45,9 +46,21 @@ function HistoryItemComponent({ item, index }: { item: ImageHistoryItem, index: 
   }, [item]);
 
   const handleRename = async () => {
+    if (!isEditing) return;
     setIsEditing(false);
     if (item.id && fileName !== item.fileName) {
-      await supabase.from('image_history').update({ file_name: fileName }).eq('id', item.id);
+      try {
+        const { error } = await supabase.from('image_history').update({ file_name: fileName }).eq('id', item.id);
+        if (error) {
+          console.error("Rename error:", error);
+          toast.error("Failed to rename file");
+          setFileName(item.fileName || "");
+        } else {
+          toast.success("File renamed");
+        }
+      } catch (err) {
+        console.error("Unexpected error during rename:", err);
+      }
     }
   };
 
@@ -67,7 +80,12 @@ function HistoryItemComponent({ item, index }: { item: ImageHistoryItem, index: 
              value={fileName}
              onChange={(e) => setFileName(e.target.value)}
              onBlur={handleRename}
-             onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+             onKeyDown={(e) => {
+               if (e.key === 'Enter') {
+                 e.preventDefault();
+                 handleRename();
+               }
+             }}
              className="bg-transparent border-b border-cyan-500 text-sm font-medium text-white focus:outline-none w-full mr-2"
              autoFocus
            />
